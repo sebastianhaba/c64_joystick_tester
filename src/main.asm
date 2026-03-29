@@ -45,6 +45,7 @@ append_loop:
 append_done:
 }
 
+// Clears the joy_state_buffer by filling it with space characters (screencode $20) and null-terminating it at the end.
 .macro clear_state_buffer() {
     .var last_index     = JOY_STATE_BUFFER_SIZE - 2    
     ldx #0
@@ -59,26 +60,30 @@ clear_loop:
     sta joy_state_buffer,x
 }
 
+// Sets the screen border color to the specified color value.
 .macro border_color(color) {
     lda #color
     sta SCREEN_BORDER
 }
 
+// Reads the byte at value_addr and prints its bits as '1' or '0' on the screen at the specified position (pos_x, pos_y).
 .macro print_bits(value_addr, pos_x, pos_y) {
     .var addr = SCREEN + (pos_y * 40) + pos_x
     lda value_addr
+    sta joy_temp_state
     ldx #7
 print_bits_loop:
-    and #%11111111
-    lsr
-    bcc print_bits_zero
+    and #%00000001
+   
+    beq print_bits_zero
         lda #$31        // screencode '1'
         jmp print_bits_store
     print_bits_zero:
         lda #$30        // screencode '0'
     print_bits_store:
         sta addr,x
-        lda value_addr
+        lsr joy_temp_state
+        lda joy_temp_state
         dex
         bpl print_bits_loop
 }
@@ -88,21 +93,26 @@ main:
     jsr SCREEN_CLEAR
     print(text_header, 12, 2)
     print(text_footer, 9, 22)
-    print(text_state, 2, 5)
+    print(text_joy2_addr, 2, 5)
+    print(text_state, 2, 7)
+    
 
 main_loop:
     // Clear the joy_state_buffer before updating it with the current state
     clear_state_buffer()
 
+    print_bits(JOY2_STATE, 9, 5)
+
     jsr check_joy2_state
-    print(joy_state_buffer, 9, 5)
+    print(joy_state_buffer, 9, 7)
 
     jmp main_loop
 
+// Checks the state of the joystick connected to port 2 and updates the joy_state_buffer with the corresponding text for each state.
 check_joy2_state:
     ldy #0
     lda JOY2_STATE
-    print_bits(JOY2_STATE, 5, 7)
+    
     cmp #JOY2_IDLE
     beq joy2_idle
         jmp check_joy2_up
@@ -206,4 +216,11 @@ text_joy_fire:
     .text "fire"
     .byte $0
 
+text_joy2_addr:
+    .encoding "screencode_mixed"
+    .text "$dc00: "
+    .byte $0
+
 joy_state_buffer: .fill JOY_STATE_BUFFER_SIZE, $20 
+
+joy_temp_state: .byte 0
