@@ -1,0 +1,13 @@
+{
+    "name": "joystick_tester",
+    "description": "Project joystick_tester",
+    "toolkit": "kick",
+    "sources": [
+        "src/main.asm"
+    ],
+    "build": "debug",
+    "definitions": [],
+    "includes": [],
+    "args": [],
+    "compiler": ""
+}
