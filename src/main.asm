@@ -12,9 +12,39 @@ BasicUpstart2(main)
 .label JOY2_RIGHT	= %00001000
 .label JOY2_FIRE	= %00010000
 
+.label SPRITE0_POS_X    = $d000
+.label SPRITE0_POS_Y    = $d001
+.label SPRITE0_COLOR    = $d027
+.label SPRITE0_POINTER  = $07f8
+.label SPRITE0_IDLE_POS_X = 173
+.label SPRITE0_IDLE_POS_Y = 151
+
+.label SPRITE1_POS_X    = $d002
+.label SPRITE1_POS_Y    = $d003
+.label SPRITE1_COLOR    = $d028
+.label SPRITE1_POINTER  = $07f9
+
+.label SPRITE2_POS_X    = $d004
+.label SPRITE2_POS_Y    = $d005
+.label SPRITE2_COLOR    = $d029
+.label SPRITE2_POINTER  = $07fa
+
+.label SPRITE3_POS_X    = $d006
+.label SPRITE3_POS_Y    = $d007
+.label SPRITE3_COLOR    = $d02a
+.label SPRITE3_POINTER  = $07fb
+
+.label SPRITE4_POS_X    = $d008
+.label SPRITE4_POS_Y    = $d009
+.label SPRITE4_COLOR    = $d02b
+.label SPRITE4_POINTER  = $07fc
+
+.label SPRITE_ENABLE    = $d015
+
 .const JOY_STATE_BUFFER_SIZE = 17
 .const COLOR_LIGHT_BLUE      = 14
 .const COLOR_RED             = 2
+.const COLOR_GREEN           = 5
 
 // Prints the null-terminated string at text_addr to the screen at the specified position (pos_x, pos_y).
 .macro print(text_addr, pos_x, pos_y) {
@@ -95,8 +125,76 @@ main:
     print(text_footer, 9, 22)
     print(text_joy2_addr, 2, 5)
     print(text_state, 2, 7)
-    
 
+    // Sprite 0 initialization
+    lda #SPRITE0_IDLE_POS_X
+    sta SPRITE0_POS_X
+
+    lda #SPRITE0_IDLE_POS_Y
+    sta SPRITE0_POS_Y
+
+    lda #$84
+    sta SPRITE0_POINTER
+
+    lda #COLOR_RED
+    sta SPRITE0_COLOR
+
+    // Sprite 1 initialization
+    lda #160
+    sta SPRITE1_POS_X
+
+    lda #140
+    sta SPRITE1_POS_Y
+
+    lda #$80
+    sta SPRITE1_POINTER
+
+    lda #COLOR_GREEN
+    sta SPRITE1_COLOR
+
+    // Sprite 2 initialization
+    lda #184
+    sta SPRITE2_POS_X
+
+    lda #140
+    sta SPRITE2_POS_Y
+
+    lda #$81
+    sta SPRITE2_POINTER
+
+    lda #COLOR_GREEN
+    sta SPRITE2_COLOR
+
+    // Sprite 3 initialization
+    lda #160
+    sta SPRITE3_POS_X
+
+    lda #161
+    sta SPRITE3_POS_Y
+
+    lda #$82
+    sta SPRITE3_POINTER
+
+    lda #COLOR_GREEN
+    sta SPRITE3_COLOR
+
+    // Sprite 4 initialization
+    lda #184
+    sta SPRITE4_POS_X
+
+    lda #161
+    sta SPRITE4_POS_Y
+
+    lda #$83
+    sta SPRITE4_POINTER
+
+    lda #COLOR_GREEN
+    sta SPRITE4_COLOR
+
+    // Enable sprites
+    lda #%00011111
+    sta SPRITE_ENABLE
+    
 main_loop:
     // Clear the joy_state_buffer before updating it with the current state
     clear_state_buffer()
@@ -118,6 +216,11 @@ check_joy2_state:
         jmp check_joy2_up
     joy2_idle:
         append_to_buffer(text_joy_idle)
+        lda #SPRITE0_IDLE_POS_X
+        sta SPRITE0_POS_X
+
+        lda #SPRITE0_IDLE_POS_Y
+        sta SPRITE0_POS_Y
 
     check_joy2_up:
         lda JOY2_STATE
@@ -128,6 +231,10 @@ check_joy2_state:
         joy2_up:
             ldy #0
             append_to_buffer(text_joy_up)
+            lda #SPRITE0_IDLE_POS_Y
+            sec
+            sbc #21
+            sta SPRITE0_POS_Y
     
     check_joy2_down:
         lda JOY2_STATE
@@ -138,6 +245,10 @@ check_joy2_state:
         joy2_down:
             ldy #0
             append_to_buffer(text_joy_down)  
+            lda #SPRITE0_IDLE_POS_Y
+            clc
+            adc #21
+            sta SPRITE0_POS_Y
 
     check_joy2_left:
         lda JOY2_STATE
@@ -147,6 +258,11 @@ check_joy2_state:
 
         joy2_left:
             append_to_buffer(text_joy_left) 
+            lda #SPRITE0_IDLE_POS_X
+            sec
+            sbc #23
+            sta SPRITE0_POS_X
+
 
     check_joy2_right:
         lda JOY2_STATE
@@ -156,7 +272,11 @@ check_joy2_state:
 
         joy2_right:
             append_to_buffer(text_joy_right)   
-
+            lda #SPRITE0_IDLE_POS_X
+            clc
+            adc #23
+            sta SPRITE0_POS_X   
+            
     check_joy2_fire:
         lda JOY2_STATE
         and #JOY2_FIRE
@@ -224,3 +344,6 @@ text_joy2_addr:
 joy_state_buffer: .fill JOY_STATE_BUFFER_SIZE, $20 
 
 joy_temp_state: .byte 0
+
+*=$2000 "Sprites"
+.import binary "assets\gfx\sprites.bin"
